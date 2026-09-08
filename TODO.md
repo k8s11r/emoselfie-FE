@@ -59,7 +59,7 @@
 - [x] `FE-025` (P0/S) Toast와 live region 구현
 - [x] `FE-026` (P0/M) ServerTimer·SubmissionCounter 표시 컴포넌트 구현
 - [x] `FE-027` (P0/M) ParticipantAvatar/Row와 나·방장·연결 상태 구현
-- [ ] `FE-028` (P0/M) ErrorView·ConnectionNotice 구현
+- [x] `FE-028` (P0/M) ErrorView·ConnectionNotice 구현 — 대기실 연결 안내, 10초 후 수동 재연결·랜딩 이동. `src/components/ConnectionNotice.test.tsx`, `src/features/lobby/Lobby.test.tsx` 검증(2026-09-08).
 - [ ] `FE-029` (P0/M) 320~430px, safe-area, dvh, 큰 글자, 키보드 레이아웃 대응
 - [x] `FE-030` (P0/S) reduced-motion, 44px 터치 영역, 색 외 상태 표현 적용
 - [ ] `FE-031` (P0/M) 컴포넌트 visual fixture/demo와 390×844 시안 비교 기준 마련
@@ -100,7 +100,7 @@
 - [x] `FE-071` (P0/M) FormData + X-Capture-Token 제출과 202 처리 구현 `CP-03·08`
 - [x] `FE-072` (P0/M) 이중 제출 차단과 제출 확인 중 상태 구현
 - [ ] `FE-073` (계약/P0) B-4 기반 자동 1회·수동 재시도와 응답 유실 복구 `CP-05`
-- [ ] `FE-074` (P0/M) DEADLINE_PASSED/ALREADY_SUBMITTED/INVALID_CAPTURE_TOKEN/NOT_CURRENT_ROUND/413/415 분기 `CP-10`
+- [x] `FE-074` (P0/M) DEADLINE_PASSED/ALREADY_SUBMITTED/INVALID_CAPTURE_TOKEN/NOT_CURRENT_ROUND/413/415 분기 `CP-10` — 코드별 문구와 복구 동작을 `src/features/game/submissionOutcome.ts`로 분리. 요청 전 검증만 재촬영을 열어 두고 서버 응답은 재전송을 막는다. `submissionOutcome.test.ts`, `CaptureStage.test.tsx`, `RoomSession.test.tsx` 검증(2026-09-08).
 - [x] `FE-075` (P0/M) 카메라·Blob·Object URL 자원 해제 테스트
 
 ## 5. 실시간 게임 — Phase 4
@@ -108,16 +108,16 @@
 - [x] `FE-080` (P0/M) Socket.IO singleton과 connect/disconnect 생명주기 구현
 - [ ] `FE-081` (P0/M) room/participant/round/submission/session 공통 handler 구현
 - [ ] `FE-082` (P0/L) snapshot과 이벤트가 공유하는 Zustand reducer 구현
-- [ ] `FE-083` (P0/M) serverTimeMs·performance.now 기반 ServerClock 구현 `RD-08`
+- [x] `FE-083` (P0/M) serverTimeMs·performance.now 기반 ServerClock 구현 `RD-08`
 - [ ] `FE-084` (P0/M) foreground·재접속 시 시계 재동기화와 타이머 테스트
-- [ ] `FE-085` (P0/M) Countdown 감정 카드·3초 전환 구현 `RD-02·03`, `EM-02`
-- [ ] `FE-086` (P0/S) 제출 현황과 10초 이하 타이머 강조 구현 `RD-03·09`
-- [ ] `FE-087` (P0/M) 타이머 0 입력 잠금과 서버 진행 확인 상태 구현 `RD-08`
-- [ ] `FE-088` (P0/M) RoundMissed scoring/viewing 2단계 화면 구현 `RS-11~14`
-- [ ] `FE-089` (P0/S) 마지막 라운드 미제출의 최종 결과 대기 문구 구현 `FN-01`
-- [ ] `FE-090` (P0/M) round:voided와 다음 라운드/3회 중단 처리
-- [ ] `FE-091` (P0/M) roundId·요청 generation으로 오래된 응답/이벤트 폐기
-- [ ] `FE-092` (P0/M) 촬영 중 사용자에게 결과 필드가 저장·표시되지 않는 접근제어 테스트 `RS-09`
+- [x] `FE-085` (P0/M) Countdown 감정 카드·3초 전환 구현 `RD-02·03`, `EM-02`
+- [x] `FE-086` (P0/S) 제출 현황과 10초 이하 타이머 강조 구현 `RD-03·09` — 서버 activeCount 분모의 제출 현황과 10초 이하 강조(색 외 `곧 마감` 문구·aria 안내). 소리·진동·자동 제출 없음. `src/components/ServerTimer.test.tsx` 검증(2026-09-08).
+- [x] `FE-087` (P0/M) 타이머 0 입력 잠금과 서버 진행 확인 상태 구현 `RD-08`
+- [x] `FE-088` (P0/M) RoundMissed scoring/viewing 2단계 화면 구현 `RS-11~14`
+- [x] `FE-089` (P0/S) 마지막 라운드 미제출의 최종 결과 대기 문구 구현 `FN-01`
+- [x] `FE-090` (P0/M) round:voided와 다음 라운드/3회 중단 처리 — 무효 라운드는 점수 없이 폐기하고 사진·촬영 토큰을 제거하며 미제출자에게도 안내한다. 3회 연속 중단은 서버 `game:finished{aborted}`를 그대로 따른다. `src/stores/gameState.test.ts` 검증(2026-09-08).
+- [x] `FE-091` (P0/M) roundId·요청 generation으로 오래된 응답/이벤트 폐기
+- [x] `FE-092` (P0/M) 촬영 중 사용자에게 결과 필드가 저장·표시되지 않는 접근제어 테스트 `RS-09` — 촬영 화면에서 도착한 submission:scored·round:finalized의 mediaToken·점수·포인트가 store에 남지 않음을 검증. 서버가 실제로 보내지 않는지는 `FE-093`·`FE-148`에서 확인(2026-09-08).
 - [ ] `FE-093` (P0/M) 미제출자 snapshot/event에 결과 상세가 없는 contract test `RS-12`
 
 ## 6. 결과·리액션·최종 화면 — Phase 5
@@ -125,8 +125,8 @@
 - [ ] `FE-100` (P0/L) ResultCarousel과 participantId 기반 선택 구현 `RS-02·03`
 - [ ] `FE-101` (계약/P0/L) B-2 서버 순서 기반 RankRail과 processing/missed 슬롯 구현 `RS-03·04·06`
 - [ ] `FE-102` (P0/M) 레일 300~500ms layout animation·이벤트 합치기·큐 정리 `RS-03`
-- [ ] `FE-103` (P0/M) no_face/failed/processing/정상 결과 표현 `SC-04·05`
-- [ ] `FE-104` (P0/M) 점수 소수 한 자리와 finalized 후 포인트 분리 표시 `SC-01·09`
+- [x] `FE-103` (P0/M) no_face/failed/processing/정상 결과 표현 `SC-04·05`
+- [x] `FE-104` (P0/M) 점수 소수 한 자리와 finalized 후 포인트 분리 표시 `SC-01·09`
 - [ ] `FE-105` (P0/M) mediaToken 사진 조회·no-store·410 자리표시자 구현 `PV-02·04`
 - [ ] `FE-106` (계약/P0/M) B-11 결과 진입 시 이전 제출 backlog 복원
 - [ ] `FE-107` (P0/L) ReactionButtons ♥·⁇ 독립 토글·자기 사진 비활성 구현 `RX-01~08`
@@ -135,8 +135,8 @@
 - [ ] `FE-110` (결정/P0/M) Q-4 감상 타이머·일반 스킵·방장 즉시 스킵 UI `RS-08·15`
 - [ ] `FE-111` (계약/P0/M) B-12 0명 분모·skip 가능 단계·종료 경계 처리
 - [ ] `FE-112` (P0/L) FinalRanking 시상대·전체 순위·본인 행 구현 `FN-01·02`
-- [ ] `FE-113` (P0/M) mostLoved 독립 수상·null 상태 구현 `RX-11`
-- [ ] `FE-114` (P0/S) 중단 reason 안내 구현
+- [x] `FE-113` (P0/M) mostLoved 독립 수상·null 상태 구현 `RX-11`
+- [x] `FE-114` (P0/S) 중단 reason 안내 구현
 - [ ] `FE-115` (P0/S) 새 방 만들기·나가기·비활성 공유 구현 `FN-03·04`
 - [ ] `FE-116` (결정/P0/S) Q-1 확정 삭제 문구를 모든 화면에 통일
 
@@ -145,9 +145,9 @@
 - [ ] `FE-120` (계약/P0/L) B-1 screen union 기반 RoomScreenResolver 구현 `ID-05`
 - [ ] `FE-121` (P0/L) 초기·reload·소켓 재연결 `/state` atomic restore 구현 `ID-05`
 - [ ] `FE-122` (계약/P0/L) B-5 revision/replay 적용과 snapshot/event 역전 테스트
-- [ ] `FE-123` (P0/M) 연결 변경 중 mutation 잠금과 ConnectionNotice 구현
-- [ ] `FE-124` (P0/M) 10초 이상 단절 후 수동 다시 연결·랜딩 이동 구현
-- [ ] `FE-125` (P0/M) session:superseded 자동 재연결 중지·사용자 재연결 구현 `ID-07`
+- [x] `FE-123` (P0/M) 연결 변경 중 mutation 잠금과 ConnectionNotice 구현
+- [x] `FE-124` (P0/M) 10초 이상 단절 후 수동 다시 연결·랜딩 이동 구현
+- [x] `FE-125` (P0/M) session:superseded 자동 재연결 중지·사용자 재연결 구현 `ID-07`
 - [ ] `FE-126` (계약/P0/M) finished·left 기존 참여자 복원 구현 `RO-16`, `FN-01`
 - [ ] `FE-127` (P0/M) round/room 변경 시 미디어·토큰·명령·animation 정리
 - [ ] `FE-128` (P0/M) Wi-Fi↔LTE, background, reload 복원 통합 테스트
@@ -190,7 +190,7 @@
 4. `FE-088~093`, `FE-100~116`: 결과·리액션·다음 라운드·최종 순위 완성.
 5. `FE-164`, `FE-064~065`, `FE-123~128`, `FE-140~155`: 모바일 예외와 출시 검증.
 
-`FE-028`은 ErrorView가 존재하나 ConnectionNotice가 남아 있고, `FE-053/081`은 일부 소켓 handler만 존재하며, `FE-083`은 시계 계산 함수만 존재한다. 해당 체크는 전체 완료 조건 충족 때 갱신한다.
+`FE-028` 공통 연결 안내는 대기실에 연결했다. `FE-053`은 임시 방장 이벤트와 권한 변경 UI를 반영했으나 새로고침 시 temporary 복원 계약이 남아 있고, `FE-081`은 게임 이벤트까지 연결했고 `FE-083`은 서버 시각·monotonic clock을 연결했다. 서버의 전체 snapshot/replay와 리액션 명령 계약은 남아 있다. 해당 체크는 전체 완료 조건 충족 때 갱신한다.
 
 ## 11. 백엔드 명세 대조로 추가한 통합 TODO
 
@@ -216,3 +216,36 @@
 - FE-161 부분: `src/api/roomEntry.ts`에서 HTTP serverTimeMs 필수·room:joined 별도 schema·본인 닉네임 adapter 적용. `src/tests/fixtures/room.ts`, `src/api/roomEntry.test.ts`에 BE §13 대기실 계약 예시와 오류 검증 추가. game 필드는 기존 미확정 경계로 남아 있으며 전체 screen 검증은 아직 완료되지 않음.
 - 소켓 생명주기 보완: 이전 연결의 handler 제거, 다른 slug의 room:joined 무시. `src/realtime/socket.test.ts`로 잘못된 데이터의 store 덮어쓰기와 이전 연결의 늦은 이벤트 차단 검증.
 - 검증 결과: `pnpm test` 12개 파일·29개 테스트 통과, `pnpm lint` 통과, `pnpm build`(TypeScript 검사 포함) 통과. 실서버·실기기 QA는 미수행.
+
+
+### 2026-09-08 대기실 생명주기 보완
+
+- FE-052: 대기실의 방 닫기 확인·HTTP 성공 후 종료 화면·실패 안내를 연결. `room:closed`의 host_closed/expired 이벤트는 snapshot을 지우고 소켓과 타이머를 해제한다. 닫힌 방에 늦은 snapshot이 다시 반영되지 않도록 차단. 게임 화면은 아직 연결되지 않아 전체 종료 통합 항목은 미완료 유지.
+- FE-053 부분: `host:changed`의 문자열 ID와 temporary를 검증하고 본인·참여자 방장 상태와 임시 방장 안내를 반영. 권한을 잃으면 열린 설정과 닫기 확인창을 숨긴다. HTTP/room:joined에 temporary 복원 필드가 없으므로 새로고침 후 임시 방장 복원은 계약 대기.
+- FE-123~125 부분: 연결이 복구되는 동안 대기실 관리 명령 잠금, 10초 이상 단절 시 수동 재연결·처음으로 액션, session:superseded 이후 소켓 handler와 타이머 정리. 수동 재연결은 새로고침으로 기존 세션→state 부트스트랩을 다시 실행한다. 전체 게임 화면의 자동 snapshot 복구는 B-1/B-5와 함께 후속 진행.
+- FE-164 부분: room:joined 검증 후 25초 presence:ping, ACK 오류/10초 시간 초과 시 연결 안내. 중복 가입·단절·교체·방 종료·세션 대체 때 타이머를 해제하고 오래된 ACK를 무시. Retry-After, foreground snapshot 재검증, 본인 participant:removed 처리는 남아 있어 미완료 유지.
+- `room:settingsUpdated` 수신 시 생략된 emotionSet 보존. 방 닫기 실패를 확인창 내부에 표시하고 dialog 접근성 이름 제공.
+- 검증: `npm run test` 14개 파일·43개 테스트, `npm run lint`, `npm run build`(타입 검사 포함) 통과. 관련 증거: `src/realtime/socket.test.ts`, `src/features/lobby/Lobby.test.tsx`, `src/components/ConnectionNotice.test.tsx`. 실서버 다중 세션·모바일 브라우저 QA는 미수행.
+
+
+### 2026-09-08 게임 화면·결과·복원 구현
+
+- FE-082·120·121·162 프론트엔드 경로: `RoomSession`이 소켓을 소유하고 lobby/countdown/capture/result/round_missed/final/종료 화면으로 분기한다. 스키마 검증한 HTTP snapshot과 실시간 이벤트를 공통 GameView로 변환한다. **서버 연동 미완료:** 현재 BE는 게임 중 `/state`와 소켓 재접속을 SERVICE_UNAVAILABLE로 거부한다. B-1/B-5/B-11 및 이 항목의 전체 완료 체크는 유지한다.
+- FE-083·085·087: HTTP 서버 시각과 RTT 중간값으로 performance.now anchor 동기화, 카운트다운 전환, 마감 입력 잠금. 전송 중인 제출은 0초만으로 미제출 처리하지 않는다. `src/time/serverClock.test.ts`, `src/features/room/RoomSession.test.tsx` 검증.
+- FE-088·089·091: 미제출 scoring/viewing·마지막 라운드 최종 대기, round:voided/closed 후 대기, 이전 roundId/라운드 인덱스 이벤트·늦은 202 폐기. `src/stores/gameState.test.ts` 검증.
+- FE-100~106 부분, FE-103·104 완료: 참여자 ID 선택, 서버 순위 정렬과 350ms layout animation, 정상/no_face/failed/채점 대기, 확정 점수·포인트, 미디어 오류 자리표시자. 202 뒤 이전 결과를 백그라운드 조회하고 실패 시 도착한 결과와 재조회 안내를 유지한다. 전체 레일의 processing/missed 슬롯과 실제 backlog는 B-2/B-11 대기. `src/features/game/GameScreens.test.tsx` 검증.
+- FE-112 부분, FE-113·114 완료: 최종 전체 순위와 본인 표시, mostLoved/null, 인원 부족/엔진 중단 사유, 새 방 링크·비활성 공유. 시상대 연출·나가기 전체 흐름은 후속. 점수와 수상자를 FE에서 계산하지 않는다.
+- FE-123·124·125: 화면 전체에 단절·복원 중 조작 잠금과 중복 탭 안내 적용. 재가입/foreground/online 때 state를 조회한다. 소켓 가입이 connect보다 먼저 와도 정상 연결을 유지한다. `src/realtime/socket.test.ts`, `src/realtime/restore.test.ts`, 기존 ConnectionNotice 테스트 검증.
+- FE-122·127 부분: 조회 중 이벤트/202 발생 시 오래된 응답 폐기·최대 3회 재조회·10초 제한·이탈 시 AbortController 정리. 게임 상태에서 이전 라운드 사진 토큰·촬영 토큰·viewer 큐 제거, 카메라 화면 unmount 정리. 서버 revision/replay의 완전한 유실 방지 및 실기기 수명 검증은 미완료.
+- FE-163 부분: roundId별 토큰 1회 전송 잠금, 202보다 빠른 viewer 이벤트 임시 보관, 응답 유실 시 자동 재전송 금지. 새로고침을 가로지르는 멱등성은 B-4 대기.
+- 제안한 result/final/missed snapshot 필드와 서버 작업은 [GAME_CONTRACT.md](./GAME_CONTRACT.md)에 명시. 실제 API 계약이 확정된 것으로 간주하지 않는다. 리액션/스킵 명령 UI는 B-3/Q-4 대기이며 집계 이벤트만 표시한다.
+- 개발용 `/__preview/game`에서 결과·최종·미제출 미리보기 제공. 브라우저에서 390px 최종 화면과 320px 결과 화면을 확인했고, 320px에서 스크롤바로 발생하던 가로 넘침을 수정했다. 실제 카메라/게임 데이터로 수행한 검증은 아니다.
+
+
+### 2026-09-08 제출 오류 분기·타이머 강조·무효 라운드
+
+- FE-074: BE §16 업로드 오류표를 `describeUploadError`의 세 가지 복구 경로로 정리했다. 요청 전에 걸러진 사진(`LocalImageError`)만 재촬영을 허용하고, 서버 응답은 촬영 토큰이 이미 소비됐다고 보고 같은 사진을 다시 보내지 않는다. DEADLINE_PASSED는 재시도를 유도하지 않고 미제출 안내로, ALREADY_SUBMITTED는 서버가 인정한 제출로 결과 경로를 유지하며 이전 결과를 배경 조회한다. INVALID_CAPTURE_TOKEN·413·415는 현재 상태 조회만 수행한다.
+- FE-086: 10초 이하에서 타이머를 강조하되 색 외에 `곧 마감` 문구와 aria-label로도 알린다. 분모는 서버 activeCount를 그대로 쓴다.
+- FE-090: `round:voided`를 받으면 점수 없이 폐기하는 안내로 전환하고, 사진·촬영 토큰·전송 잠금을 정리한다. 미제출 화면에서도 같은 안내를 받는다. 3회 연속 무효의 중단은 서버 `game:finished{aborted:true, reason:"engine_unavailable"}`를 그대로 표시한다.
+- FE-092: 촬영 중 도착한 다른 참여자의 결과 이벤트가 store에 남지 않음을 검증했다. 서버 페이로드 자체의 필드 노출 검사는 `FE-093`·`FE-148`로 남는다.
+- 검증: `pnpm test` 21개 파일·88개 테스트, `pnpm lint`, `pnpm build`(타입 검사 포함) 통과. 실서버·실기기 QA는 미수행이며, 브라우저에서 촬영 화면의 강조 타이머를 눈으로 확인하지는 않았다.
