@@ -240,7 +240,7 @@ export function FinalScreen({ game, participantId, roundCount }: FinalScreenProp
         <span className="final-ranking__rank">{row.rank}</span>
         <span className="final-ranking__avatar" style={{ background: avatarColors[row.colorTag] }} aria-hidden="true">{row.nickname.slice(0, 1)}</span>
         <span className="final-ranking__name">{row.nickname}{row.participantId === participantId ? ' (나)' : ''}</span>
-        <span className="final-ranking__counts"><span aria-label={`좋아요 ${row.likeCount}`}>♥{row.likeCount}</span><span aria-label={`에계 ${row.questionCount}`}>?{row.questionCount}</span></span>
+        <span className="final-ranking__counts"><span aria-label={`좋아요 ${row.likeCount}`}>♥{row.likeCount}</span><span aria-label={`판정이 궁금해요 ${row.questionCount}`}>?{row.questionCount}</span></span>
         <strong className="final-ranking__total">{row.totalPoints} 포인트</strong>
       </li>)}</ol>
     </> : null}
