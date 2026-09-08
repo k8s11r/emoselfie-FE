@@ -6,6 +6,7 @@ import { CameraPreview } from '../../components/CameraPreview';
 import { CaptureReview } from '../../components/CaptureReview';
 import { ServerTimer } from '../../components/ServerTimer';
 import { SubmissionCounter } from '../../components/SubmissionCounter';
+import { describeUploadError } from './submissionOutcome';
 
 type CaptureStageProps = {
   emotion: { displayName: string; emoji: string; hint: string };
@@ -28,11 +29,16 @@ export function CaptureStage({
   locked = false,
   onSubmit,
 }: CaptureStageProps) {
+  const active = useRef(false);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const videoRef = useRef<HTMLVideoElement>(null);
   const camera = useCameraPreview(videoRef);
   const [photo, setPhoto] = useState<PhotoResource | null>(null);
   const [status, setStatus] = useState<'idle' | 'encoding' | 'uploading'>('idle');
   const [error, setError] = useState<string | null>(null);
+  // A server response consumed the one-use capture token, so the same photo
+  // must not be offered for resending even though it is still on screen.
+  const [spent, setSpent] = useState(false);
 
   useEffect(() => () => {
     releasePhotoResource(photo);
@@ -45,7 +51,7 @@ export function CaptureStage({
     setError(null);
     try {
       const blob = await captureVideoFrame(video);
-      setPhoto(createPhotoResource(blob));
+      if (active.current) setPhoto(createPhotoResource(blob));
     } catch (value) {
       setError(value instanceof CaptureError ? value.message : '사진을 찍지 못했어요. 다시 시도해 주세요.');
     } finally {
@@ -54,21 +60,25 @@ export function CaptureStage({
   }
 
   function retake() {
+    if (spent) return;
     setPhoto(null);
     setError(null);
   }
 
   async function submit() {
-    if (!photo || status !== 'idle' || locked) return;
+    if (!photo || status !== 'idle' || locked || spent) return;
     setStatus('uploading');
     setError(null);
     try {
       await onSubmit(photo.blob);
-      camera.stop();
-    } catch {
-      setError('제출을 확인하지 못했어요. 현재 접수 상태를 확인한 뒤 다시 시도해 주세요.');
+      if (active.current) camera.stop();
+    } catch (value) {
+      const failure = describeUploadError(value);
+      if (!active.current) return;
+      setError(failure.message);
+      if (failure.recovery !== 'retake') setSpent(true);
     } finally {
-      setStatus('idle');
+      if (active.current) setStatus('idle');
     }
   }
 
@@ -87,7 +97,7 @@ export function CaptureStage({
 
       <div className="capture-frame">
         <CameraPreview videoRef={videoRef} phase={camera.phase} slow={camera.slow} failure={camera.failure} hidden={Boolean(photo)} onRetry={camera.retry} />
-        {photo ? <CaptureReview imageUrl={photo.url} submitting={status === 'uploading'} error={error} onRetake={retake} onSubmit={submit} /> : null}
+        {photo ? <CaptureReview imageUrl={photo.url} locked={locked || spent} submitting={status === 'uploading'} error={error} onRetake={retake} onSubmit={submit} /> : null}
       </div>
 
       {!photo ? (

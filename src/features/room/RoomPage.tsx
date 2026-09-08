@@ -9,7 +9,7 @@ import { ErrorView } from '../../components/ErrorView';
 import { CameraBlocked } from '../entry/CameraBlocked';
 import { CameraIntro } from '../entry/CameraIntro';
 import { NicknameSetup } from '../entry/NicknameSetup';
-import { Lobby } from '../lobby/Lobby';
+import { RoomSession } from './RoomSession';
 import { useRoomStore } from '../../stores/roomStore';
 
 type EntryStep = 'nickname' | 'camera' | 'blocked' | 'lobby';
@@ -47,6 +47,10 @@ function errorCopy(error: unknown): { title: string; description: string } {
 
 export default function RoomPage() {
   const { slug = '' } = useParams();
+  return <RoomEntry key={slug} slug={slug} />;
+}
+
+function RoomEntry({ slug }: { slug: string }) {
   const validSlug = /^[A-Za-z0-9_-]{12,}$/.test(slug);
   const hydrate = useRoomStore((state) => state.hydrate);
   const clear = useRoomStore((state) => state.clear);
@@ -58,6 +62,7 @@ export default function RoomPage() {
   const meQuery = useQuery({ queryKey: ['me'], queryFn: getMe, enabled: validSlug });
   const roomQuery = useQuery({
     queryKey: ['room-entry', slug],
+    gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false,
     queryFn: () => bootstrapRoom(slug),
     enabled: validSlug && meQuery.isSuccess,
     retry: (count, error) => count < 1 && !(error instanceof ApiError && ['ROOM_NOT_FOUND', 'ROOM_CLOSED', 'ROOM_FULL'].includes(error.code)),
@@ -133,7 +138,7 @@ export default function RoomPage() {
     return <ErrorView title="방이 가득 찼어요" description="최대 12명까지 참여할 수 있어요." onRetry={() => roomQuery.refetch()} />;
   }
 
-  if (roomQuery.data?.kind === 'restored' || step === 'lobby') return <Lobby />;
+  if (roomQuery.data?.kind === 'restored' || step === 'lobby') return <RoomSession key={slug} slug={slug} />;
   if (step === 'camera') return <CameraIntro pending={cameraMutation.isPending} error={entryError} onStart={() => cameraMutation.mutate()} />;
   if (step === 'blocked') return <CameraBlocked reason={cameraFailure} pending={cameraMutation.isPending} onRetry={() => cameraMutation.mutate()} />;
 

@@ -22,7 +22,7 @@
 
 * { box-sizing: border-box; }
 html { background: var(--cream); }
-body { margin: 0; min-width: 320px; min-height: 100vh; min-height: 100dvh; }
+body { margin: 0; min-width: 0; min-height: 100vh; min-height: 100dvh; }
 button, input { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
@@ -200,6 +200,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .shutter-button:disabled { opacity: .45; box-shadow: none; cursor: not-allowed; }
 @keyframes camera-spin { to { transform: rotate(360deg); } }
 .server-timer { padding: 6px 10px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; font-variant-numeric: tabular-nums; font-weight: 900; }
+.server-timer--urgent { display: inline-flex; align-items: baseline; gap: 6px; border-color: var(--pink); background: var(--pink); color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.server-timer__urgent-note { font-size: 11px; font-weight: 900; letter-spacing: -0.2px; }
 .submission-counter { display: inline-flex; min-height: 32px; align-items: center; padding: 5px 10px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 900; }
 .toast-region { position: fixed; inset: auto 16px max(20px, env(safe-area-inset-bottom)) 16px; z-index: 50; display: flex; justify-content: center; pointer-events: none; }
 .toast { max-width: 390px; padding: 12px 16px; border: 2px solid var(--ink); border-radius: 14px; background: var(--ink); color: #fff; box-shadow: 0 4px 0 var(--pink); font-size: 14px; font-weight: 800; }
@@ -221,4 +223,35 @@ button { -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+.connection-notice { padding: 14px; border: 2px solid var(--ink); border-radius: 16px; background: var(--cream); }
+.connection-notice p { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.connection-notice .error-view__actions { margin-top: 12px; flex-wrap: wrap; }
+.host-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.game-waiting { min-height: 65dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+.game-waiting > span, .final-trophy { font-size: 64px; }
+.game-waiting h1, .game-header h1, .final-page h1 { margin: 0; font-family: Jua, Pretendard, sans-serif; font-size: clamp(26px, 7vw, 36px); }
+.game-waiting p { max-width: 30ch; margin: 0; line-height: 1.7; color: var(--muted); }
+.result-page, .final-page { display: flex; flex-direction: column; gap: 18px; padding-bottom: 24px; min-width: 0; }
+.game-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.result-photo { display: grid; place-items: center; aspect-ratio: 3 / 4; border: 3px solid var(--ink); border-radius: 24px; overflow: hidden; background: #1c1d22; color: white; }
+.result-photo img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.result-photo p { padding: 24px; text-align: center; }
+.result-detail h2 { margin: 0; overflow-wrap: anywhere; }
+.result-detail p { margin: 8px 0 0; }
+.rank-rail { display: flex; gap: 10px; padding: 4px 0 10px; margin: 0; list-style: none; overflow-x: auto; }
+.rank-rail button { min-height: 48px; max-width: 150px; overflow-wrap: anywhere; padding: 10px 14px; border: 2px solid var(--ink); border-radius: 14px; background: white; font-weight: 800; cursor: pointer; }
+.rank-rail button[aria-pressed="true"] { background: var(--yellow); box-shadow: 0 3px 0 var(--ink); }
+.round-results, .final-ranking { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.round-results li, .final-ranking li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border: 2px solid var(--ink); border-radius: 16px; background: white; overflow-wrap: anywhere; }
+.final-page header { text-align: center; }
+.final-ranking li:first-child { background: var(--yellow); }
+.final-ranking li strong { flex: 1; min-width: 0; }
+.final-page > button { min-height: 44px; border: 2px solid var(--ink); border-radius: 14px; padding: 12px; }
+@media (max-width: 350px) {
+  .capture-stage__header { grid-template-columns: 1fr auto; }
+  .capture-stage__header .round-label { grid-column: 1 / -1; grid-row: 2; text-align: center; }
+  .final-ranking li { flex-wrap: wrap; }
 }

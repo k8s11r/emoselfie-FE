@@ -1,0 +1,19 @@
+import { useState } from 'react';
+import { FinalScreen, ResultScreen, WaitingScreen } from '../features/game/GameScreens';
+import { finishedFixture, finalizedFixture, scoredFixture } from '../tests/fixtures/game';
+import { resultView } from '../stores/gameState';
+
+// Development-only route. Fixtures never initiate mutations or join a real room.
+export default function GamePreview() {
+  const [startedAt, setStartedAt] = useState(Date.now);
+  const [screen, setScreen] = useState<'result' | 'final' | 'missed'>('result');
+  return <>
+    <nav aria-label="개발용 화면 선택" className="rank-rail">
+      {(['result', 'final', 'missed'] as const).map((value) => <button type="button" key={value} onClick={() => { setStartedAt(Date.now()); setScreen(value); }}>{value === 'result' ? '라운드 결과' : value === 'final' ? '최종 순위' : '미제출'}</button>)}
+    </nav>
+    <p className="field-help">개발용 예시 · 실제 게임 데이터가 아니며 사진은 만료 자리표시자로 표시합니다.</p>
+    {screen === 'result' ? <ResultScreen game={{ ...resultView({ roundId: '87', index: 3 }), cards: [scoredFixture, { ...scoredFixture, participantId: '43', submissionId: '914', nickname: '지수', currentRank: null, status: 'failed', targetScore: null, mediaToken: 'preview-expired' }], finalized: true, results: finalizedFixture.results, viewingEndsAtMs: startedAt + 30_000, reactions: { '913': { like: 4, question: 1 } } }} /> : null}
+    {screen === 'final' ? <FinalScreen game={{ ...finishedFixture, ranking: [...finishedFixture.ranking, { ...finishedFixture.ranking[0], rank: 2, participantId: '43', nickname: '지수', totalPoints: 270 }] }} /> : null}
+    {screen === 'missed' ? <WaitingScreen title="이번 라운드를 놓쳤어요" description="곧 다음 진행을 안내할게요." endsAtMs={startedAt + 15_000} /> : null}
+  </>;
+}

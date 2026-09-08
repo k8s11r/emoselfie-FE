@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { AppErrorBoundary } from '../components/AppErrorBoundary';
 import { AppShell } from '../components/AppShell';
 
+const GamePreview = import.meta.env.DEV ? lazy(() => import('../dev/GamePreview')) : null;
 const LandingPage = lazy(() => import('../features/entry/LandingPage'));
 const RoomPage = lazy(() => import('../features/room/RoomPage'));
 const NotFoundPage = lazy(() => import('../features/errors/NotFoundPage'));
@@ -34,6 +35,7 @@ export function App() {
           <AppShell>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
+                {GamePreview ? <Route path="/__preview/game" element={<GamePreview />} /> : null}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/r/:slug" element={<RoomPage />} />
                 <Route path="*" element={<NotFoundPage />} />
