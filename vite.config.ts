@@ -9,10 +9,13 @@ export default defineConfig({
   server: {
     host: true,
     proxy: {
-      '/api': backendTarget,
-      '/media': backendTarget,
+      // The backend enforces a same-origin check on mutations, so the dev proxy must keep the
+      // browser's Host header instead of rewriting it to the backend address.
+      '/api': { target: backendTarget, changeOrigin: false },
+      '/media': { target: backendTarget, changeOrigin: false },
       '/socket.io': {
         target: backendTarget,
+        changeOrigin: false,
         ws: true,
       },
     },
