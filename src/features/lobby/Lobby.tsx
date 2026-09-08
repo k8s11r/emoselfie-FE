@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { closeRoom, startRoom, updateRoomSettings } from '../../api/roomEntry';
 import { ApiError } from '../../api/errors';
 import { ConfirmSheet } from '../../components/ConfirmSheet';
@@ -9,7 +9,8 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { StickerButton } from '../../components/StickerButton';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { ToastRegion } from '../../components/ToastRegion';
-import { connectRoomSocket } from '../../realtime/socket';
+import { ConnectionNotice } from '../../components/ConnectionNotice';
+import { ErrorView } from '../../components/ErrorView';
 import { useRoomStore } from '../../stores/roomStore';
 
 const rounds = [{ value: 3, label: '3' }, { value: 5, label: '5' }, { value: 7, label: '7' }] as const;
@@ -17,18 +18,15 @@ const times = [{ value: 15, label: '15초' }, { value: 20, label: '20초' }, { v
 
 export function Lobby() {
   const snapshot = useRoomStore((state) => state.snapshot);
-  const roomSlug = snapshot?.room.slug;
+  const roomSlug = snapshot?.room.status === 'closed' ? undefined : snapshot?.room.slug;
   const connection = useRoomStore((state) => state.connection);
+  const closedReason = useRoomStore((state) => state.closedReason);
+  const temporaryHost = useRoomStore((state) => state.temporaryHost);
   const updateSettingsInStore = useRoomStore((state) => state.updateSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [closeOpen, setCloseOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!roomSlug) return;
-    return connectRoomSocket(roomSlug);
-  }, [roomSlug]);
 
   const settingsMutation = useMutation({
     mutationFn: (settings: { roundCount: 3 | 5 | 7; timeLimitSec: 15 | 20 | 30 }) => updateRoomSettings(snapshot!.room.slug, settings),
@@ -41,16 +39,22 @@ export function Lobby() {
   });
   const closeMutation = useMutation({
     mutationFn: () => closeRoom(snapshot!.room.slug),
-    onSuccess() { setCloseOpen(false); },
+    onSuccess() {
+      setCloseOpen(false);
+      if (useRoomStore.getState().snapshot?.room.slug === roomSlug) useRoomStore.getState().close('host_closed');
+    },
     onError(value) { setError(value instanceof ApiError ? value.message : '방을 닫지 못했어요.'); },
   });
 
   const inviteUrl = useMemo(() => snapshot ? new URL(`/r/${snapshot.room.slug}`, window.location.origin).toString() : '', [snapshot]);
 
+  if (closedReason || snapshot?.room.status === 'closed') return <ErrorView title="종료된 방이에요" description={closedReason === 'expired' ? '오랫동안 활동이 없어 방이 종료됐어요.' : '새 방을 만들어 친구들을 다시 초대해 주세요.'} />;
   if (!snapshot) return null;
 
   const activeParticipants = snapshot.participants.filter((participant) => participant.status === 'active');
-  const canStart = activeParticipants.length >= 2 && connection === 'connected';
+  const canManage = snapshot.me.isHost && connection === 'connected' && snapshot.room.status === 'waiting';
+  const pending = settingsMutation.isPending || startMutation.isPending || closeMutation.isPending;
+  const canStart = activeParticipants.length >= 2 && canManage;
   const settings = snapshot.room.settings;
 
   async function copyInvite() {
@@ -69,17 +73,20 @@ export function Lobby() {
         <span className={`connection-dot connection-dot--${connection}`}>{connection === 'connected' ? '연결됨' : '연결 확인 중'}</span>
       </header>
 
+      {connection !== 'connected' ? <ConnectionNotice key={connection === 'superseded' ? 'superseded' : 'disconnected'} connection={connection} /> : null}
+      {temporaryHost ? <p role="status">방장이 잠시 자리를 비워 임시 방장이 진행하고 있어요.</p> : null}
+
       {snapshot.me.isHost ? (
         <div className="host-actions">
-          <button type="button" onClick={() => setSettingsOpen((value) => !value)}>설정 변경</button>
-          <button type="button" onClick={() => setCloseOpen(true)}>방 닫기</button>
+          <button type="button" disabled={!canManage || pending} onClick={() => setSettingsOpen((value) => !value)}>설정 변경</button>
+          <button type="button" disabled={!canManage || pending} onClick={() => { setError(null); setCloseOpen(true); }}>방 닫기</button>
         </div>
       ) : null}
 
-      {settingsOpen ? (
+      {settingsOpen && canManage ? (
         <SurfaceCard className="lobby-settings">
-          <SettingChips legend="라운드" name="lobby-rounds" value={settings.roundCount} options={rounds} onChange={(roundCount) => settingsMutation.mutate({ roundCount, timeLimitSec: settings.timeLimitSec })} disabled={settingsMutation.isPending} />
-          <SettingChips legend="제한시간" name="lobby-time" value={settings.timeLimitSec} options={times} onChange={(timeLimitSec) => settingsMutation.mutate({ roundCount: settings.roundCount, timeLimitSec })} disabled={settingsMutation.isPending} />
+          <SettingChips legend="라운드" name="lobby-rounds" value={settings.roundCount} options={rounds} onChange={(roundCount) => settingsMutation.mutate({ roundCount, timeLimitSec: settings.timeLimitSec })} disabled={pending} />
+          <SettingChips legend="제한시간" name="lobby-time" value={settings.timeLimitSec} options={times} onChange={(timeLimitSec) => settingsMutation.mutate({ roundCount: settings.roundCount, timeLimitSec })} disabled={pending} />
         </SurfaceCard>
       ) : null}
 
@@ -93,15 +100,15 @@ export function Lobby() {
         <ul>{snapshot.participants.map((participant) => <ParticipantRow key={participant.participantId} participant={participant} isMe={participant.participantId === snapshot.me.participantId} />)}</ul>
       </section>
 
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {error && !(closeOpen && canManage) ? <p className="form-error" role="alert">{error}</p> : null}
 
       {snapshot.me.isHost ? (
-        <StickerButton fullWidth disabled={!canStart || startMutation.isPending} disabledReason={!canStart ? '연결된 참여자가 2명 이상 모이면 시작할 수 있어요' : undefined} onClick={() => startMutation.mutate()}>
+        <StickerButton fullWidth disabled={!canStart || pending} disabledReason={!canStart ? '방에 참여자가 2명 이상 있고 연결이 완료되면 시작할 수 있어요' : undefined} onClick={() => startMutation.mutate()}>
           {startMutation.isPending ? '시작하고 있어요' : `시작하기 · ${settings.roundCount}라운드`}
         </StickerButton>
       ) : <p className="waiting-copy">방장이 시작하기를 기다리는 중이에요.</p>}
 
-      <ConfirmSheet open={closeOpen} title="방을 닫을까요?" description="방을 닫으면 모든 참여자가 나가게 돼요." confirmLabel="방 닫기" pending={closeMutation.isPending} onCancel={() => setCloseOpen(false)} onConfirm={() => closeMutation.mutate()} />
+      <ConfirmSheet open={closeOpen && canManage} title="방을 닫을까요?" description="방을 닫으면 모든 참여자가 나가게 돼요." confirmLabel="방 닫기" error={error} pending={pending} onCancel={() => setCloseOpen(false)} onConfirm={() => { if (canManage && !pending) closeMutation.mutate(); }} />
       <ToastRegion message={toast} />
     </div>
   );
