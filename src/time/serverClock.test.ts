@@ -1,0 +1,15 @@
+import { describe, expect, it } from 'vitest';
+import { estimateClockOffset, remainingSeconds } from './serverClock';
+
+describe('serverClock', () => {
+  it('남은 시간을 올림하고 0 미만으로 내리지 않는다', () => {
+    expect(remainingSeconds(10_001, 10_000)).toBe(1);
+    expect(remainingSeconds(11_000, 10_000)).toBe(1);
+    expect(remainingSeconds(9_000, 10_000)).toBe(0);
+  });
+
+  it('왕복 시간의 중간점을 기준으로 서버 시계 오차를 계산한다', () => {
+    expect(estimateClockOffset(10_150, 10_000, 10_100)).toBe(100);
+  });
+});
+
