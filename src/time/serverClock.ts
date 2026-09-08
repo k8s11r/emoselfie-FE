@@ -7,3 +7,11 @@ export function estimateClockOffset(serverTimeMs: number, requestStartedAtMs: nu
   return serverTimeMs - midpoint;
 }
 
+
+let anchor: { server: number; local: number } | null = null;
+export function syncServerClock(serverTimeMs: number, started: number, received: number) {
+  anchor = { server: serverTimeMs + Math.max(0, received - started) / 2, local: received };
+}
+export function serverNow(): number {
+  return anchor ? anchor.server + performance.now() - anchor.local : Date.now();
+}

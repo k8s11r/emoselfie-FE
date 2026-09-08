@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { gameSnapshotSchema } from './game';
+import { syncServerClock } from '../time/serverClock';
 import { apiRequest } from './client';
 import { roomSettingsSchema } from './rooms';
 
@@ -46,7 +48,7 @@ export const lobbySnapshotSchema = z.object({
     nickname: z.string().optional(),
   }),
   participants: z.array(participantSchema),
-  game: z.unknown().nullable(),
+  game: gameSnapshotSchema.nullable(),
   serverTimeMs: z.number().optional(),
 });
 
@@ -65,6 +67,8 @@ export const roomJoinedSchema = lobbySnapshotSchema.omit({ serverTimeMs: true })
 export function toLobbySnapshot(
   payload: z.infer<typeof roomJoinedSchema> | z.infer<typeof roomStateSchema>,
 ): LobbySnapshot {
+  if (payload.room.status === 'playing' && !payload.game) throw new Error('INVALID_GAME_SNAPSHOT');
+  if (payload.room.status === 'finished' && payload.game?.screen !== 'final') throw new Error('INVALID_FINAL_SNAPSHOT');
   const nickname = payload.me.nickname
     ?? payload.participants.find((participant) => participant.participantId === payload.me.participantId)?.nickname;
   return { ...payload, me: { ...payload.me, nickname } };
@@ -74,8 +78,12 @@ export function getRoomPreview(slug: string): Promise<RoomPreview> {
   return apiRequest(`/api/rooms/${slug}`, roomPreviewSchema);
 }
 
-export async function getRoomState(slug: string): Promise<LobbySnapshot> {
-  return toLobbySnapshot(await apiRequest(`/api/rooms/${slug}/state`, roomStateSchema));
+export async function getRoomState(slug: string, signal?: AbortSignal): Promise<LobbySnapshot> {
+  const started = performance.now();
+  const snapshot = toLobbySnapshot(await apiRequest(`/api/rooms/${slug}/state`, roomStateSchema, { signal }));
+  if (snapshot.room.slug !== slug) throw new Error('WRONG_ROOM_SNAPSHOT');
+  if (!signal?.aborted) syncServerClock(snapshot.serverTimeMs!, started, performance.now());
+  return snapshot;
 }
 
 export function joinRoom(slug: string, nickname: string): Promise<ParticipantJoin> {
