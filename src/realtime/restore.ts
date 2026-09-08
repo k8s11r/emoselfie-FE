@@ -48,7 +48,12 @@ export function createRoomRestorer(slug: string) {
       } catch (error) {
         if (!disposed && requestGeneration === generation) {
           if (error instanceof ApiError && error.code === 'ROOM_CLOSED') { useRoomStore.getState().close('closed'); return false; }
-          if (foregroundRequested) useRoomStore.getState().setRestoring(false, '현재 게임 상태를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.');
+          // The server serves /state in the lobby only, so a running game answers 503 by
+          // design (B-1/B-11). Live events remain the newest state: keep the screen and
+          // stay quiet instead of reporting a failure the player cannot act on.
+          const lobbyOnly = error instanceof ApiError && error.code === 'SERVICE_UNAVAILABLE';
+          if (lobbyOnly && useRoomStore.getState().game) useRoomStore.getState().setRestoring(false);
+          else if (foregroundRequested) useRoomStore.getState().setRestoring(false, '현재 게임 상태를 불러오지 못했어요. 잠시 후 다시 확인해 주세요.');
           else useRoomStore.getState().setRestoreWarning('이전에 제출된 결과를 불러오지 못했어요. 현재 도착한 결과를 표시하고 있어요.');
         }
         return false;

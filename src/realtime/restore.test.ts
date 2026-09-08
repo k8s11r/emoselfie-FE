@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '../api/errors';
 import { getRoomState, roomStateSchema, toLobbySnapshot } from '../api/roomEntry';
 import { captureSnapshotFixture, resultSnapshotFixture } from '../tests/fixtures/game';
 import { useRoomStore } from '../stores/roomStore';
@@ -46,7 +47,20 @@ describe('atomic room restore', () => {
     expect(await pending).toBe(false);
     expect(useRoomStore.getState().game).toBeNull();
   });
-  it('서버 미지원·잘못된 응답은 재시도 오류로 표시한다', async () => {
+  it('게임 중 /state 미지원 응답은 진행 화면을 유지하고 경고를 남기지 않는다', async () => {
+    // The server answers 503 outside the lobby by design, so live events stay authoritative.
+    vi.mocked(getRoomState).mockRejectedValue(new ApiError('SERVICE_UNAVAILABLE', '아직 요청을 처리할 준비가 되지 않았어요', 503));
+    const instance = restorer();
+
+    expect(await instance.restore()).toBe(false);
+    expect(useRoomStore.getState().restoreError).toBeNull();
+    expect(useRoomStore.getState().restoring).toBe(false);
+    expect(useRoomStore.getState().game?.screen).toBe('capture');
+
+    expect(await instance.restore(true)).toBe(false);
+    expect(useRoomStore.getState().restoreWarning).toBeNull();
+  });
+  it('잘못된 응답은 재시도 오류로 표시한다', async () => {
     vi.mocked(getRoomState).mockRejectedValue(new Error('SERVICE_UNAVAILABLE'));
     expect(await restorer().restore()).toBe(false);
     expect(useRoomStore.getState().restoring).toBe(false);

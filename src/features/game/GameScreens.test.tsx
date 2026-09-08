@@ -31,6 +31,15 @@ describe('result presentation', () => {
     expect(screen.getAllByText('채점 중')).toHaveLength(2);
   });
 
+  it('내가 제출하기 전에 채점된 결과는 잠긴 슬롯과 안내로 알린다', () => {
+    // The server counts 3 scored, but this client only joined the audience for one of them.
+    render(<ResultScreen game={{ ...resultView(round), cards: [{ ...scoredFixture, scoredCount: 3, scoredTotal: 5 }] }} roundCount={5} />);
+    expect(screen.getByText('3 / 5 채점 완료')).toBeVisible();
+    expect(screen.getAllByText('이전 결과')).toHaveLength(2);
+    expect(screen.getAllByText('채점 중')).toHaveLength(2);
+    expect(screen.getByText('내가 제출하기 전에 채점된 2명의 결과는 이 화면에서 볼 수 없어요.')).toBeVisible();
+  });
+
   it.each(['no_face', 'failed'] as const)('%s도 사진을 표시하고 미디어 오류는 자리표시자로 처리한다', (status) => {
     render(<ResultScreen game={{ ...resultView(round), cards: [{ ...scoredFixture, status, targetScore: status === 'failed' ? null : 0 }] }} />);
     expect(screen.getByText(status === 'failed' ? '판정 불가' : '얼굴 인식 실패')).toBeVisible();

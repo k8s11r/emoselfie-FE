@@ -61,9 +61,13 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
   const myCard = participantId ? game.cards.find((card) => card.participantId === participantId) : undefined;
   const myResult = participantId ? game.results.find((row) => row.participantId === participantId) : undefined;
   const myRank = myResult?.rank ?? myCard?.currentRank ?? null;
-  // The server sends its own denominator; pending slots are anonymous until it scores them.
-  const scoredTotal = Math.max(rankedCards.at(-1)?.scoredTotal ?? 0, rankedCards.length);
-  const pending = Math.max(0, scoredTotal - rankedCards.length);
+  // Counts come from the server. A submitter joins the result audience only when the
+  // server accepts their photo, so anything scored earlier never reaches this client
+  // (BE §13.1 viewers; backlog is B-11). Show that gap instead of inventing cards.
+  const scoredCount = Math.max(rankedCards.length, ...rankedCards.map((card) => card.scoredCount));
+  const scoredTotal = Math.max(scoredCount, ...rankedCards.map((card) => card.scoredTotal));
+  const earlier = scoredCount - rankedCards.length;
+  const pending = scoredTotal - scoredCount;
 
   function move(delta: number) {
     if (!selected || rankedCards.length < 2) return;
@@ -143,7 +147,7 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
 
     <div className="rail-head">
       <h2>{game.finalized ? '라운드 순위' : '실시간 순위'}</h2>
-      <span role="status">{rankedCards.length} / {scoredTotal} 채점 완료</span>
+      <span role="status">{scoredCount} / {scoredTotal} 채점 완료</span>
     </div>
     <nav aria-label="참여자 결과 선택">
       <motion.ul className="rank-rail">
@@ -158,11 +162,16 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
             <span className="rail-card__name">{card.nickname}{card.participantId === participantId ? ' (나)' : ''}</span>
           </button>
         </motion.li>)}
+        {Array.from({ length: earlier }, (_, index) => <li key={`earlier-${index}`} className="rail-pending">
+          <span className="rail-card__thumb" aria-hidden="true">🔒</span>
+          <span className="rail-card__name">이전 결과</span>
+        </li>)}
         {Array.from({ length: pending }, (_, index) => <li key={`pending-${index}`} className="rail-pending">
           <span className="rail-card__thumb" aria-hidden="true">⏳</span>
           <span className="rail-card__name">채점 중</span>
         </li>)}
       </motion.ul>
+      {earlier > 0 ? <p className="foot-note" role="status">내가 제출하기 전에 채점된 {earlier}명의 결과는 이 화면에서 볼 수 없어요.</p> : null}
     </nav>
 
     <div className="result-skip">
