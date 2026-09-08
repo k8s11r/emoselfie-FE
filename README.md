@@ -23,6 +23,18 @@ pnpm dev
 
 세션 쿠키는 `Secure`로 발급되고 운영에서는 https로 서비스합니다. Safari는 http 오리진에서 `Secure` 쿠키를 저장하지 않으므로(localhost 포함, Chrome과 다름) 개발 프록시가 http 응답에 한해 이 속성만 제거합니다. `HttpOnly`, `SameSite`, 백엔드 응답 자체는 그대로입니다.
 
+## 휴대폰에서 열기
+
+로컬 개발 서버를 Cloudflare 고정 주소로 노출합니다. 프론트엔드·백엔드가 이미 떠 있으면 터널만 연결하고, `--start`를 주면 꺼져 있는 서버도 함께 띄웁니다.
+
+```bash
+./scripts/dev-tunnel.sh
+```
+
+QR과 공유 링크는 고정 주소 `https://emoselfie-redirect.emoselfie.workers.dev`를 사용합니다. 터널 주소는 실행할 때마다 바뀌지만 스크립트가 Cloudflare Workers KV를 갱신하므로 고정 주소는 그대로입니다. 워커 설정은 `../emoselfie-redirect`에 있습니다.
+
+터널은 프론트엔드 하나만 엽니다. `/api`, `/media`, `/socket.io`는 개발 프록시가 같은 오리진으로 백엔드에 전달합니다.
+
 ## 품질 검사
 
 ```bash
