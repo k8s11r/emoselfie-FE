@@ -11,18 +11,28 @@ export type SubmissionAccepted = z.infer<typeof submissionAcceptedSchema>;
 
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
+// Rejected before the request, so the capture token is still unused and the
+// user can retake. A server 413/415 arrives after the token was consumed.
+export class LocalImageError extends ApiError {}
+
+export function validateCaptureImage(image: Blob): LocalImageError | null {
+  if (image.type !== 'image/jpeg') {
+    return new LocalImageError('UNSUPPORTED_MEDIA', 'JPEG 사진만 제출할 수 있어요.', 415);
+  }
+  if (image.size === 0 || image.size > MAX_UPLOAD_BYTES) {
+    return new LocalImageError('PAYLOAD_TOO_LARGE', '사진 크기가 올바르지 않아요.', 413);
+  }
+  return null;
+}
+
 export async function uploadSubmission(input: {
   slug: string;
   roundId: string;
   captureToken: string;
   image: Blob;
 }): Promise<SubmissionAccepted> {
-  if (input.image.type !== 'image/jpeg') {
-    throw new ApiError('UNSUPPORTED_MEDIA', 'JPEG 사진만 제출할 수 있어요.', 415);
-  }
-  if (input.image.size === 0 || input.image.size > MAX_UPLOAD_BYTES) {
-    throw new ApiError('PAYLOAD_TOO_LARGE', '사진 크기가 올바르지 않아요. 다시 찍어 주세요.', 413);
-  }
+  const invalid = validateCaptureImage(input.image);
+  if (invalid) throw invalid;
 
   const body = new FormData();
   body.append('image', input.image, 'capture.jpg');
