@@ -21,6 +21,8 @@ pnpm dev
 
 개발 서버는 `/api`, `/media`, `/socket.io` 요청을 기본적으로 `http://localhost:8000`에 전달합니다. 다른 백엔드를 사용할 때는 `VITE_DEV_BACKEND_TARGET`을 설정합니다.
 
+세션 쿠키는 `Secure`로 발급되고 운영에서는 https로 서비스합니다. Safari는 http 오리진에서 `Secure` 쿠키를 저장하지 않으므로(localhost 포함, Chrome과 다름) 개발 프록시가 http 응답에 한해 이 속성만 제거합니다. `HttpOnly`, `SameSite`, 백엔드 응답 자체는 그대로입니다.
+
 ## 품질 검사
 
 ```bash
