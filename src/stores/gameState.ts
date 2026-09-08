@@ -1,14 +1,15 @@
 import type { GameEvent, GameFinished, GameSnapshot, RoundResult, ScoredSubmission } from '../api/game';
 
 type Round = { roundId: string; index: number };
+export type Emotion = { label: string; displayName: string; emoji: string; color: string; hint: string };
 export type CaptureGame = Round & {
-  screen: 'countdown' | 'capture'; emotion: { label: string; displayName: string; emoji: string; color: string; hint: string };
+  screen: 'countdown' | 'capture'; emotion: Emotion;
   countdownEndsAtMs: number; deadlineAtMs: number; captureToken: string; submitted: number; total: number;
 };
 export type ResultGame = Round & {
   screen: 'result'; cards: ScoredSubmission[]; results: RoundResult[]; finalized: boolean;
   viewingEndsAtMs: number | null; reactions: Record<string, { like: number; question: number }>;
-  skipStatus: { skipped: number; total: number } | null;
+  skipStatus: { skipped: number; total: number } | null; emotion?: Emotion;
 };
 export type GameView = CaptureGame | ResultGame
   | (Round & { screen: 'round_missed'; phase: 'scoring' | 'viewing'; nextRoundAtMs?: number })
@@ -16,8 +17,8 @@ export type GameView = CaptureGame | ResultGame
   | { screen: 'starting' } | { screen: 'lobby_waiting_next' }
   | ({ screen: 'final' } & GameFinished);
 
-export function resultView(round: Round): ResultGame {
-  return { screen: 'result', roundId: round.roundId, index: round.index, cards: [], results: [], finalized: false, viewingEndsAtMs: null, reactions: {}, skipStatus: null };
+export function resultView(round: Round & { emotion?: Emotion }): ResultGame {
+  return { screen: 'result', roundId: round.roundId, index: round.index, emotion: round.emotion, cards: [], results: [], finalized: false, viewingEndsAtMs: null, reactions: {}, skipStatus: null };
 }
 export function restoreGame(game: GameSnapshot | null, activeCount: number): GameView | null {
   if (!game || game.screen === 'lobby' || game.screen === 'error_room_closed') return null;

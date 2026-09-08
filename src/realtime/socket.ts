@@ -8,6 +8,16 @@ import { safeLogger } from '../logging/safeLogger';
 import { useRoomStore } from '../stores/roomStore';
 
 let releaseSocket: (() => void) | null = null;
+
+// BE §13.2 C→S commands. The server owns the toggle, so a command only asks;
+// totals always come back through reaction:updated / round:skipStatus.
+export type RoomCommandName = 'reaction:sent' | 'round:skip';
+let activeCommand: ((name: RoomCommandName, payload: object) => Promise<void>) | null = null;
+
+export function sendRoomCommand(name: RoomCommandName, payload: object): Promise<void> {
+  return activeCommand?.(name, payload) ?? Promise.reject(new Error('NOT_CONNECTED'));
+}
+
 const hostChangedSchema = z.object({ hostParticipantId: z.string().min(1), temporary: z.boolean() });
 const roomClosedSchema = z.object({ reason: z.enum(['host_closed', 'expired']) });
 const removedSchema = z.object({ participantId: z.string().min(1) });
@@ -34,9 +44,23 @@ export function connectRoomSocket(slug: string, path = '/socket.io'): () => void
     presenceTimer = undefined;
     ackTimer = undefined;
   };
+  const command = (name: RoomCommandName, payload: object) => new Promise<void>((resolve, reject) => {
+    if (released || !joined) { reject(new Error('NOT_CONNECTED')); return; }
+    const timer = setTimeout(() => reject(new Error('COMMAND_TIMEOUT')), 10_000);
+    next.emit(name, payload, (raw: unknown) => {
+      clearTimeout(timer);
+      const parsed = ackSchema.safeParse(raw);
+      if (!parsed.success) reject(new Error('UNEXPECTED_ACK'));
+      else if (parsed.data.ok) resolve();
+      else reject(new Error(parsed.data.error.code));
+    });
+  });
+  activeCommand = command;
+
   const release = () => {
     if (released) return;
     released = true;
+    if (activeCommand === command) activeCommand = null;
     stopPresence();
     restorer.dispose();
     document.removeEventListener('visibilitychange', onVisibility);
