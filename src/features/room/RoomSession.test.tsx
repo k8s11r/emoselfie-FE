@@ -45,10 +45,10 @@ describe('room screen routing', () => {
     expect(screen.getByRole('heading', { name: '게임을 시작해요' })).toBeVisible();
     receive('round:revealed', revealedFixture);
     await userEvent.setup().click(screen.getByRole('button', { name: '테스트 사진 제출' }));
-    expect(await screen.findByRole('heading', { name: '3라운드 결과' })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: '3 / 5 라운드 결과' })).toBeVisible();
     expect(uploadSubmission).toHaveBeenCalledTimes(1);
     receive('game:finished', finishedFixture);
-    expect(screen.getByRole('heading', { name: '최종 결과' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: '태호 우승!' })).toBeVisible();
     expect(connectRoomSocket).toHaveBeenCalledTimes(1);
   });
   it('카운트다운이 끝나기 전에는 촬영을 시작하지 않는다', () => {
@@ -76,7 +76,7 @@ describe('room screen routing', () => {
     vi.mocked(uploadSubmission).mockRejectedValue(new ApiError('ALREADY_SUBMITTED', '이미 제출했어요', 409));
     showCaptureBeforeDeadline();
     await userEvent.setup().click(screen.getByRole('button', { name: '테스트 사진 제출' }));
-    expect(await screen.findByRole('heading', { name: '3라운드 결과' })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: '3 / 5 라운드 결과' })).toBeVisible();
     expect(uploadSubmission).toHaveBeenCalledTimes(1);
     expect(submitFailures).toEqual(['ALREADY_SUBMITTED:locked']);
   });

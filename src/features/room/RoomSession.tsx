@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { uploadSubmission, validateCaptureImage } from '../../api/submissions';
-import { connectRoomSocket } from '../../realtime/socket';
+import { connectRoomSocket, sendRoomCommand } from '../../realtime/socket';
 import { restoreCurrentRoom } from '../../realtime/restore';
 import { useRoomStore } from '../../stores/roomStore';
 import { serverNow } from '../../time/serverClock';
@@ -36,10 +36,17 @@ export function RoomSession({ slug }: { slug: string }) {
   // Hide media and stop the camera during a disconnected/duplicate session.
   if (disconnected) return <ConnectionNotice key={state.connection === 'superseded' ? 'superseded' : 'disconnected'} connection={state.connection} />;
   const refresh = <StickerButton tone="plain" onClick={() => { void restoreCurrentRoom(); }}>현재 상태 확인</StickerButton>;
-  if (game.screen === 'final') return <FinalScreen game={game} participantId={state.snapshot.me.participantId} />;
-  if (game.screen === 'result') return <>{state.restoreWarning ? <div role="status"><p>{state.restoreWarning}</p><StickerButton tone="plain" onClick={() => { void restoreCurrentRoom(true); }}>이전 결과 다시 확인</StickerButton></div> : null}<ResultScreen key={game.roundId} game={game} /></>;
+  const roundCount = state.snapshot.room.settings.roundCount;
+  if (game.screen === 'final') return <FinalScreen game={game} participantId={state.snapshot.me.participantId} roundCount={roundCount} />;
+  if (game.screen === 'result') {
+    const roundId = game.roundId;
+    return <>{state.restoreWarning ? <div role="status"><p>{state.restoreWarning}</p><StickerButton tone="plain" onClick={() => { void restoreCurrentRoom(true); }}>이전 결과 다시 확인</StickerButton></div> : null}
+      <ResultScreen key={roundId} game={game} roundCount={roundCount} participantId={state.snapshot.me.participantId}
+        onReact={(submissionId, type) => sendRoomCommand('reaction:sent', { submissionId, type })}
+        onSkip={() => sendRoomCommand('round:skip', { roundId })} /></>;
+  }
   if (game.screen === 'starting' || game.screen === 'lobby_waiting_next') return <><WaitingScreen title={game.screen === 'starting' ? '게임을 시작해요' : '다음 게임을 기다려 주세요'} description="서버에서 진행 소식을 받으면 이어서 안내할게요." />{refresh}</>;
-  if (game.screen === 'round_missed') return <><WaitingScreen title="이번 라운드를 놓쳤어요" description={game.index >= state.snapshot.room.settings.roundCount ? '마지막 라운드가 끝나면 최종 결과를 안내할게요.' : game.phase === 'scoring' ? '라운드가 끝나기를 기다리고 있어요.' : '곧 다음 진행을 안내할게요.'} endsAtMs={game.nextRoundAtMs} />{refresh}</>;
+  if (game.screen === 'round_missed') return <><WaitingScreen title="이번 라운드를 놓쳤어요" description={game.index >= roundCount ? '마지막 라운드가 끝나면 최종 결과를 안내할게요.' : game.phase === 'scoring' ? '라운드가 끝나기를 기다리고 있어요.' : '곧 다음 진행을 안내할게요.'} endsAtMs={game.nextRoundAtMs} />{refresh}</>;
   // D-5: a voided round is discarded without a rerun, so no score is coming for it.
   if (game.screen === 'waiting') return <><WaitingScreen title={game.reason === 'voided' ? '이번 라운드는 무효예요' : '다음 진행을 기다려 주세요'}
     description={game.reason === 'voided' ? '채점을 마치지 못해 이번 라운드는 점수 없이 넘어가요. 다음 진행은 서버 안내를 따를게요.' : '서버에서 다음 라운드나 최종 결과를 준비하고 있어요.'}
@@ -78,7 +85,7 @@ export function RoomSession({ slug }: { slug: string }) {
   }
   const pending = state.uploadRoundId === game.roundId;
   return <>
-    <CaptureStage key={game.roundId} emotion={game.emotion} round={game.index} totalRounds={state.snapshot.room.settings.roundCount}
+    <CaptureStage key={game.roundId} emotion={game.emotion} round={game.index} totalRounds={roundCount}
       submittedCount={game.submitted} participantCount={game.total} submissionEndsAtMs={game.deadlineAtMs}
       locked={now >= game.deadlineAtMs || pending} onSubmit={submit} />
     {pending || now >= game.deadlineAtMs ? <><p role="status">제출 여부는 서버 확인 후 안내해요.</p>{refresh}</> : null}
