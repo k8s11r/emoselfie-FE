@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CameraLayoutPreview } from './CameraLayoutPreview';
 import { FinalScreen, ResultScreen, WaitingScreen } from '../features/game/GameScreens';
 import { emotionFixture, finishedFixture, finalizedFixture, scoredFixture } from '../tests/fixtures/game';
 import { resultView } from '../stores/gameState';
@@ -6,12 +7,13 @@ import { resultView } from '../stores/gameState';
 // Development-only route. Fixtures never initiate mutations or join a real room.
 export default function GamePreview() {
   const [startedAt, setStartedAt] = useState(Date.now);
-  const [screen, setScreen] = useState<'result' | 'final' | 'missed'>('result');
+  const [screen, setScreen] = useState<'result' | 'final' | 'missed' | 'capture'>('result');
   return <>
     <nav aria-label="개발용 화면 선택" className="rank-rail">
-      {(['result', 'final', 'missed'] as const).map((value) => <button type="button" key={value} onClick={() => { setStartedAt(Date.now()); setScreen(value); }}>{value === 'result' ? '라운드 결과' : value === 'final' ? '최종 순위' : '미제출'}</button>)}
+      {(['result', 'final', 'missed', 'capture'] as const).map((value) => <button type="button" key={value} onClick={() => { setStartedAt(Date.now()); setScreen(value); }}>{value === 'result' ? '라운드 결과' : value === 'final' ? '최종 순위' : value === 'capture' ? '촬영 레이아웃' : '미제출'}</button>)}
     </nav>
     <p className="field-help">개발용 예시 · 실제 게임 데이터가 아니며 사진은 만료 자리표시자로 표시합니다.</p>
+    {screen === 'capture' ? <CameraLayoutPreview /> : null}
     {screen === 'result' ? <ResultScreen roundCount={5} participantId="41" onReact={async () => {}} onSkip={async () => {}}
       game={{ ...resultView({ roundId: '87', index: 3, emotion: emotionFixture }),
         cards: [scoredFixture, { ...scoredFixture, participantId: '41', submissionId: '914', nickname: '지수', currentRank: 2, status: 'failed', targetScore: null, mediaToken: 'preview-expired' }],

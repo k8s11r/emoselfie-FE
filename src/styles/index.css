@@ -174,7 +174,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .emotion-prompt > span { display: grid; place-items: center; flex: none; width: 58px; height: 58px; border: 3px solid var(--ink); border-radius: 20px; background: var(--yellow); box-shadow: 0 4px 0 var(--ink); font-size: 30px; transform: rotate(-3deg); }
 .emotion-prompt h1 { margin: 0; font-family: Jua, Pretendard, sans-serif; font-size: 34px; line-height: 36px; }
 .emotion-prompt p { margin: 2px 0 0; color: #4a4a4a; font-size: 13px; line-height: 18px; }
-.capture-frame { position: relative; width: 100%; aspect-ratio: 3 / 4; min-height: 0; overflow: hidden; border: 4px solid var(--ink); border-radius: 28px; background: #1c1d22; box-shadow: 0 7px 0 var(--ink); }
+.capture-frame { position: relative; flex: none; align-self: center; width: 100%; aspect-ratio: 3 / 4; min-height: 0; overflow: hidden; border: 4px solid var(--ink); border-radius: 28px; background: #1c1d22; box-shadow: 0 7px 0 var(--ink); }
 .camera-preview, .capture-review { position: absolute; inset: 0; }
 .camera-preview--hidden { visibility: hidden; }
 .camera-preview video { width: 100%; height: 100%; display: block; object-fit: contain; transform: scaleX(-1); background: #1c1d22; }
@@ -216,7 +216,10 @@ button { -webkit-tap-highlight-color: transparent; }
   .capture-stage { gap: 9px; }
   .emotion-prompt > span { width: 46px; height: 46px; border-radius: 15px; font-size: 24px; }
   .emotion-prompt h1 { font-size: 29px; line-height: 31px; }
-  .capture-frame { max-height: calc(100dvh - 238px); margin-inline: auto; width: auto; max-width: 100%; }
+  /* The video/review are absolutely positioned, so width:auto + auto margins
+     collapses this flex item to its border width. Keep an explicit 3:4 size.
+     75dvh - 178.5px is (100dvh - 238px) × 3/4; scroll on very short screens. */
+  .capture-frame { width: min(100%, max(180px, calc(75dvh - 178.5px))); margin-inline: auto; }
   .shutter-button { width: 60px; height: 60px; }
   .shutter-button span { width: 43px; height: 43px; }
 }
