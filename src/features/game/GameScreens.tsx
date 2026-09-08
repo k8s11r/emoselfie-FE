@@ -14,11 +14,12 @@ export function WaitingScreen({ title, description, endsAtMs }: { title: string;
   return <main className="game-waiting"><span aria-hidden="true">⏳</span><h1>{title}</h1><p role="status">{description}</p>{endsAtMs !== undefined ? <ServerTimer endsAtMs={endsAtMs} label="다음 진행까지" /> : null}</main>;
 }
 
+// SC-01: one decimal, and `failed` never becomes a numeric zero.
 function scoreText(card: ScoredSubmission | undefined, score: number | null | undefined, status: string | undefined) {
   if (status === 'failed') return '판정 불가';
   if (status === 'no_face') return '얼굴 인식 실패';
   if (status === 'missed') return '미제출';
-  return score === null || score === undefined ? (card ? '채점 중' : '—') : `${score.toFixed(1)}점`;
+  return score === null || score === undefined ? (card ? '채점 중' : '판별 중') : `${score.toFixed(1)}점`;
 }
 
 function Photo({ card, className, alt, fallback }: { card: ScoredSubmission; className: string; alt: string; fallback?: string }) {
@@ -60,7 +61,8 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
   const isSelf = Boolean(selected && participantId && selected.participantId === participantId);
   const myCard = participantId ? game.cards.find((card) => card.participantId === participantId) : undefined;
   const myResult = participantId ? game.results.find((row) => row.participantId === participantId) : undefined;
-  const myRank = myResult?.rank ?? myCard?.currentRank ?? null;
+  const myScore = myResult && myResult.targetScore !== undefined ? myResult.targetScore : myCard?.targetScore;
+  const myRank = myResult ? myResult.rank : myCard?.currentRank ?? null;
   // Counts come from the server. A submitter joins the result audience only when the
   // server accepts their photo, so anything scored earlier never reaches this client
   // (BE §13.1 viewers; backlog is B-11). Show that gap instead of inventing cards.
@@ -114,7 +116,7 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
       </span> : null}
       <p className="my-score">
         <span>내 점수</span>
-        <strong>{scoreText(myCard, myResult?.targetScore ?? myCard?.targetScore, myResult?.status ?? myCard?.status)}</strong>
+        <strong>{scoreText(myCard, myScore, myResult?.status ?? myCard?.status)}</strong>
         <span>{myRank ? `· ${myRank}위` : '· 집계 중'}</span>
       </p>
     </div>
@@ -127,15 +129,18 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
       </> : null}
       <p className="result-stage__rank"><strong>{Number.isFinite(rank) ? `${rank}위` : '집계 중'}</strong>{selected.nickname}</p>
       <p className="result-stage__score">{scoreText(selected, score, status)}</p>
+      {game.finalized && result ? <p className="result-stage__points">+{result.rankPoints} 포인트</p> : null}
       <div className="result-stage__reactions">
         <div className="reaction-buttons">
-          <button type="button" className="reaction-button reaction-button--like" aria-pressed={Boolean(mine[selected.submissionId]?.like)}
+          <button type="button" className="reaction-button reaction-button--like" aria-label={`좋아요 ${counts?.like ?? 0}`}
+            aria-pressed={Boolean(mine[selected.submissionId]?.like)}
             disabled={isSelf || !onReact} onClick={() => void react('like')}>
             <span aria-hidden="true">♥</span>좋아요 {counts?.like ?? 0}
           </button>
-          <button type="button" className="reaction-button reaction-button--question" aria-pressed={Boolean(mine[selected.submissionId]?.question)}
+          <button type="button" className="reaction-button reaction-button--question" aria-label={`판정이 궁금해요 ${counts?.question ?? 0}`}
+            aria-pressed={Boolean(mine[selected.submissionId]?.question)}
             disabled={isSelf || !onReact} onClick={() => void react('question')}>
-            <span aria-hidden="true">?</span>에계 {counts?.question ?? 0}
+            <span aria-hidden="true">?</span>궁금해요 {counts?.question ?? 0}
           </button>
         </div>
         <p className="reaction-note">{isSelf ? '내 사진에는 리액션을 보낼 수 없어요' : '다시 누르면 취소돼요'}</p>
@@ -147,16 +152,16 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
 
     <div className="rail-head">
       <h2>{game.finalized ? '라운드 순위' : '실시간 순위'}</h2>
-      <span role="status">{scoredCount} / {scoredTotal} 채점 완료</span>
+      <span role="status">{game.finalized ? `${scoredCount}명 결과 확정` : `${scoredCount} / ${scoredTotal} 채점 완료`}</span>
     </div>
     <nav aria-label="참여자 결과 선택">
       <motion.ul className="rank-rail">
-        {rankedCards.map((card, index) => <motion.li layout transition={railMotion} key={card.participantId}>
+        {rankedCards.map((card) => <motion.li layout transition={railMotion} key={card.participantId}>
           <button type="button" className="rail-card" aria-pressed={selected?.participantId === card.participantId}
             onClick={() => setSelectedId(card.participantId)}>
             <span className="rail-card__thumb" style={{ background: avatarColors[card.colorTag] }}>
               <Photo card={card} className="rail-card__photo" alt="" fallback={card.nickname.slice(0, 1)} />
-              <span className="rail-card__rank">{Number.isFinite(rankOf(card)) ? rankOf(card) : index + 1}</span>
+              <span className="rail-card__rank">{Number.isFinite(rankOf(card)) ? rankOf(card) : '·'}</span>
               <span className="rail-card__likes">♥{game.reactions[card.submissionId]?.like ?? 0}</span>
             </span>
             <span className="rail-card__name">{card.nickname}{card.participantId === participantId ? ' (나)' : ''}</span>
@@ -183,7 +188,7 @@ export function ResultScreen({ game, roundCount, participantId, onReact, onSkip 
       </button>
       <p className="foot-note">{game.viewingEndsAtMs === null
         ? '채점이 끝나면 감상 시간이 시작돼요.'
-        : '모두 스킵을 누르면 바로 다음 라운드로 넘어가요 · ♥는 최고, ?는 “이게 1등이라고?”'}</p>
+        : '모두 스킵을 누르면 바로 다음 라운드로 넘어가요 · 리액션은 점수에 영향을 주지 않아요.'}</p>
     </div>
   </main>;
 }

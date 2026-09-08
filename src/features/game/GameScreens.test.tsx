@@ -47,6 +47,29 @@ describe('result presentation', () => {
     expect(screen.getAllByText('사진을 더 이상 볼 수 없어요.').length).toBeGreaterThan(0);
   });
 
+  it('확정 후에는 서버 점수와 순위 포인트를 단위를 구분해 보여 준다', () => {
+    render(<ResultScreen roundCount={5} participantId={scoredFixture.participantId}
+      game={{ ...resultView(round), cards: [scoredFixture], results: finalizedFixture.results, finalized: true }} />);
+    // Shown twice on purpose: the "my score" summary and the selected card's pill.
+    expect(screen.getAllByText('91.3점')).toHaveLength(2);
+    expect(screen.getByText('+100 포인트')).toBeVisible();
+    // The counter must not sit at "n / m 채점 완료" once the round is settled.
+    expect(screen.getByText('1명 결과 확정')).toBeVisible();
+  });
+
+  it('서버 순위가 없는 카드에 FE가 순위를 지어내지 않는다', () => {
+    render(<ResultScreen roundCount={5} game={{ ...resultView(round), cards: [{ ...scoredFixture, currentRank: null }] }} />);
+    const rail = screen.getByRole('navigation', { name: '참여자 결과 선택' });
+    expect(rail).toHaveTextContent('·');
+    expect(rail).not.toHaveTextContent('1위');
+    expect(screen.queryByText('+100 포인트')).not.toBeInTheDocument();
+  });
+
+  it('내 제출이 아직 채점되지 않았으면 판별 중으로 표시한다', () => {
+    render(<ResultScreen roundCount={5} participantId="99" game={{ ...resultView(round), cards: [scoredFixture] }} />);
+    expect(screen.getByText('판별 중')).toBeVisible();
+  });
+
   it('리액션은 서버에 요청만 보내고 총수는 서버 값을 그대로 쓴다', async () => {
     const onReact = vi.fn().mockResolvedValue(undefined);
     const game = { ...resultView(round), cards: [scoredFixture], reactions: { '913': { like: 4, question: 1 } } };
@@ -66,7 +89,7 @@ describe('result presentation', () => {
   it('내 사진에는 리액션을 보낼 수 없고 이유를 안내한다', () => {
     render(<ResultScreen game={{ ...resultView(round), cards: [scoredFixture] }} participantId={scoredFixture.participantId} onReact={vi.fn()} onSkip={vi.fn()} />);
     expect(screen.getByRole('button', { name: /좋아요/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /에계/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /판정이 궁금해요/ })).toBeDisabled();
     expect(screen.getByText('내 사진에는 리액션을 보낼 수 없어요')).toBeVisible();
   });
 

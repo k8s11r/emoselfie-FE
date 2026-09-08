@@ -257,6 +257,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .result-stage__rank { left: 12px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
 .result-stage__rank strong { font-family: Jua, Pretendard, sans-serif; font-size: 15px; }
 .result-stage__score { right: 12px; font-family: Jua, Pretendard, sans-serif; font-size: 16px; font-variant-numeric: tabular-nums; }
+.result-stage__points { position: absolute; right: 12px; top: 52px; margin: 0; padding: 4px 10px; border: 2px solid var(--ink); border-radius: 999px; background: var(--yellow); font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .result-stage__reactions { position: absolute; inset: auto 0 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .reaction-buttons { display: flex; gap: 8px; }
 .reaction-button { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px; border: 3px solid var(--ink); border-radius: 999px; background: #fff; box-shadow: 0 5px 0 var(--ink); font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
