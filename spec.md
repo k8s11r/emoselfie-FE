@@ -12,15 +12,15 @@
 
 | 문서 | 역할 |
 |---|---|
-| [requirements.md](../../requirements.md) v1.0 | 제품 요구사항과 요구사항 ID |
-| [Frontend Development Guidelines.md](../Frontend%20Development%20Guidelines.md) | 기술 스택과 프론트엔드 책임 |
-| [design](../../design/) | 화면 구성과 시각적 기준 |
-| [Design Tokens v2.dc.html](../../design/Design%20Tokens%20v2.dc.html) | 디자인 토큰 정본 |
-| [DECISIONS.md](../../DECISIONS.md) | C-1~C-12의 기존 결정 이력 |
-| [Backend 구현 명세](../spec.md) v1.0 | 기존 HTTP·Socket.IO 계약과 D-1~D-8 결정 |
-| [Design Delta.md](../../design/uploads/Design%20Delta.md) | 디자인 변경 이력 참고. 현재 시안과 다른 설명이 있어 그대로 적용하지 않는다 |
+| [requirements.md](../emoselfie-DOCS/requirements.md) v1.0 | 제품 요구사항과 요구사항 ID |
+| [Frontend Development Guidelines.md](../emoselfie-DOCS/development/Frontend%20Development%20Guidelines.md) | 기술 스택과 프론트엔드 책임 |
+| [design](../emoselfie-DOCS/design/) | 화면 구성과 시각적 기준 |
+| [Design Tokens v2.dc.html](../emoselfie-DOCS/design/Design%20Tokens%20v2.dc.html) | 디자인 토큰 정본 |
+| [DECISIONS.md](../emoselfie-DOCS/DECISIONS.md) | C-1~C-12의 기존 결정 이력 |
+| [Backend 구현 명세](../emoselfie-BE/spec.md) v1.0 | 기존 HTTP·Socket.IO 계약과 D-1~D-8 결정 |
+| [Design Delta.md](../emoselfie-DOCS/design/uploads/Design%20Delta.md) | 디자인 변경 이력 참고. 현재 시안과 다른 설명이 있어 그대로 적용하지 않는다 |
 
-기존 `development/spec.md`는 백엔드 명세이므로 이 문서는 `development/frontend/spec.md`에 둔다. 기존 문서를 덮어쓰지 않는다.
+백엔드 명세는 `emoselfie-BE/spec.md`, 이 문서는 `emoselfie-FE/spec.md`로 각 구현 저장소가 소유한다. 참조 경로는 두 저장소가 같은 상위 디렉터리에 있는 워크스페이스 기준이다.
 
 제품 규칙은 PRD와 확정 결정 기록을 따른다. API 경로·필드명은 백엔드 명세에 맞춘다. 서로 모순되거나 계약이 빠진 경우 이 문서의 결정 대기·계약 보완 표로 추적하며, 추천안을 승인된 규칙으로 취급하지 않는다. 이 문서에서 선택한 컴포넌트 분리·폴더명 등은 구현 설계이며 별도 제품 결정이 아니다.
 

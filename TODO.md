@@ -1,6 +1,6 @@
 # 이모셀피 Frontend TODO
 
-- 기준: [Backend spec.md](../emoselfie-DOCS/development/backend/spec.md), [Frontend spec.md](../emoselfie-DOCS/development/frontend/spec.md), [PLAN.md](./PLAN.md)
+- 기준: [Backend spec.md](../emoselfie-BE/spec.md), [Frontend spec.md](./spec.md), [PLAN.md](./PLAN.md)
 - 갱신일: 2026-09-08. 기존 완료 기록은 보존하며 이번 문서 검토로 구현·연동 완료 상태를 추가하지 않는다.
 - 상태 표기: `[ ]` 미착수, `[x]` 완료
 - 우선순위: P0 MVP 필수, P1 후속

@@ -1,7 +1,7 @@
 # 이모셀피 Frontend 개발 계획
 
-- 기준 계약: [Backend spec.md](../emoselfie-DOCS/development/backend/spec.md) v1.0 (§1~3, §6~11, §13~16)
-- 화면·UX 보완: [Frontend spec.md](../emoselfie-DOCS/development/frontend/spec.md), [실행 TODO](./TODO.md)
+- 기준 계약: [Backend spec.md](../emoselfie-BE/spec.md) v1.0 (§1~3, §6~11, §13~16)
+- 화면·UX 보완: [Frontend spec.md](./spec.md), [실행 TODO](./TODO.md)
 - 작성일: 2026-09-07 / 갱신일: 2026-09-08
 - 대상: MVP P0 프론트엔드
 - 현재 상태: 기존 TODO상 Phase 0 완료. 소스에서 입장·대기실·카메라·업로드 구현을 확인했으며, 게임 화면 연결·결과·복원은 후속 작업이다. 이번 갱신은 문서 계획이며 실행 테스트나 실서버 연동 완료를 의미하지 않는다.
