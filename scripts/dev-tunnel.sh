@@ -4,6 +4,9 @@
 #   ./scripts/dev-tunnel.sh          이미 떠 있는 서버를 그대로 쓰고 터널만 연결
 #   ./scripts/dev-tunnel.sh --start  꺼져 있는 서버(백엔드/프론트)도 함께 띄운다
 #
+# emoselfie-INFRA 의 도커 스택(nginx :8080)이 떠 있으면 그쪽을 노출한다. 없으면
+# 네이티브 개발 구성(vite :5173 + uvicorn :8000)을 쓴다.
+#
 # 이 스크립트가 직접 띄운 프로세스만 Ctrl+C 때 정리한다. 사용자가 따로 띄워 둔
 # 서버는 건드리지 않는다.
 set -e
@@ -15,6 +18,7 @@ REDIRECT_DIR="$WORKSPACE_DIR/emoselfie-redirect"
 
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+DOCKER_PORT="${DOCKER_PORT:-8080}"
 WORKER_URL="${WORKER_URL:-https://emoselfie-redirect.emoselfie.workers.dev}"
 
 TUNNEL_LOG=/tmp/emoselfie-cloudflared.log
@@ -62,10 +66,25 @@ echo "=========================================="
 echo " emoselfie 개발 환경 공개"
 echo "=========================================="
 
+# 도커 스택은 nginx 하나가 정적 자산과 /api 를 같은 오리진으로 서빙한다.
+DOCKER_MODE=false
+listening "$DOCKER_PORT" && DOCKER_MODE=true
+
 # ------------------------------------------------------------
 # 1. 백엔드
 # ------------------------------------------------------------
 echo ""
+if $DOCKER_MODE; then
+  echo "[1/4] 도커 스택 :$DOCKER_PORT (emoselfie-INFRA)"
+  echo "      nginx 가 정적 자산과 API 를 같은 오리진으로 서빙합니다."
+  HEALTH_URL="http://localhost:$DOCKER_PORT/health/ready"
+  TARGET_PORT="$DOCKER_PORT"
+else
+  HEALTH_URL="http://localhost:$BACKEND_PORT/health/ready"
+  TARGET_PORT="$FRONTEND_PORT"
+fi
+
+if ! $DOCKER_MODE; then
 echo "[1/4] 백엔드 :$BACKEND_PORT"
 if listening "$BACKEND_PORT"; then
   echo "      이미 떠 있어서 그대로 씁니다."
@@ -79,8 +98,9 @@ else
   BACKEND_PID=$!
   wait_for_port "$BACKEND_PORT" "백엔드" "$BACKEND_PID" || { cat "$BACKEND_LOG"; exit 1; }
 fi
+fi
 # 추론 엔진이 fake 면 모든 점수가 0 또는 100 이 된다. 조용히 넘어가지 않는다.
-BACKEND_MODE="$(curl -sS "http://localhost:$BACKEND_PORT/health/ready" 2>/dev/null || true)"
+BACKEND_MODE="$(curl -sS "$HEALTH_URL" 2>/dev/null || true)"
 case "$BACKEND_MODE" in
   *'"inferenceBackend":"real"'*) echo "      추론 엔진: real" ;;
   *'"inferenceBackend":"fake"'*) echo "      주의: 추론 엔진이 fake 입니다. 점수가 0 또는 100 으로만 나옵니다." ;;
@@ -90,6 +110,7 @@ esac
 # ------------------------------------------------------------
 # 2. 프론트엔드
 # ------------------------------------------------------------
+if ! $DOCKER_MODE; then
 echo ""
 echo "[2/4] 프론트엔드 :$FRONTEND_PORT"
 if listening "$FRONTEND_PORT"; then
@@ -103,6 +124,7 @@ else
   FRONTEND_PID=$!
   wait_for_port "$FRONTEND_PORT" "프론트엔드" "$FRONTEND_PID" || { cat "$FRONTEND_LOG"; exit 1; }
 fi
+fi
 
 # ------------------------------------------------------------
 # 3. Quick Tunnel
@@ -110,7 +132,7 @@ fi
 echo ""
 echo "[3/4] Cloudflare Quick Tunnel"
 : > "$TUNNEL_LOG"
-cloudflared tunnel --url "http://localhost:$FRONTEND_PORT" > "$TUNNEL_LOG" 2>&1 &
+cloudflared tunnel --url "http://localhost:$TARGET_PORT" > "$TUNNEL_LOG" 2>&1 &
 TUNNEL_PID=$!
 
 TUNNEL_URL=""
@@ -166,7 +188,7 @@ echo " 공유 주소 (QR 은 이 주소로)"
 echo "   $WORKER_URL"
 echo ""
 echo " 현재 터널 : $TUNNEL_URL"
-echo " 로컬      : http://localhost:$FRONTEND_PORT"
+echo " 로컬      : http://localhost:$TARGET_PORT"
 echo " 로그      : $TUNNEL_LOG"
 echo "=========================================="
 echo ""
