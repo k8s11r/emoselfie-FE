@@ -13,7 +13,7 @@
 | 문서 | 역할 |
 |---|---|
 | [requirements.md](../emoselfie-DOCS/requirements.md) v1.0 | 제품 요구사항과 요구사항 ID |
-| [Frontend Development Guidelines.md](../emoselfie-DOCS/development/Frontend%20Development%20Guidelines.md) | 기술 스택과 프론트엔드 책임 |
+| [Frontend Development Guidelines.md](./guidelines.md) | 기술 스택과 프론트엔드 책임 |
 | [design](../emoselfie-DOCS/design/) | 화면 구성과 시각적 기준 |
 | [Design Tokens v2.dc.html](../emoselfie-DOCS/design/Design%20Tokens%20v2.dc.html) | 디자인 토큰 정본 |
 | [DECISIONS.md](../emoselfie-DOCS/DECISIONS.md) | C-1~C-12의 기존 결정 이력 |
