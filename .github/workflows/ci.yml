@@ -26,3 +26,64 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # 검사를 통과한 커밋만 이미지가 된다. main으로 들어온 push만 ECR에 올리고,
+  # PR에서는 빌드만 해서 Dockerfile이 깨진 것을 미리 잡는다.
+  image:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: AWS 자격 증명 (OIDC, 저장된 키 없음)
+        if: env.PUBLISH == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: ECR 로그인
+        id: ecr
+        if: env.PUBLISH == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 태그 결정
+        id: tags
+        run: |
+          registry='${{ steps.ecr.outputs.registry }}'
+          # 백엔드는 이미지가 둘이라 RUNTIME/MODELS로 나눴다. 프론트는 하나뿐이고
+          # INFRA의 서비스 이름이 web이라 WEB으로 둔다.
+          repo='${{ vars.ECR_REPOSITORY_WEB }}'
+          # 푸시하지 않는 빌드에는 레지스트리도 저장소 변수도 없다. 태그가 비면
+          # 빌드 자체가 실패하므로 로컬 이름으로 채운다.
+          [ -n "$registry" ] || registry='local'
+          [ -n "$repo" ] || repo='emoselfie-fe'
+          echo "web=$registry/$repo:sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      # 배포 대상 EC2가 amd64다. 백엔드와 같은 아키텍처로 맞춘다.
+      - name: 웹 이미지
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          platforms: linux/amd64
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ steps.tags.outputs.web }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          provenance: false
+
+      - name: 올린 이미지 기록
+        if: env.PUBLISH == 'true'
+        run: |
+          {
+            echo "### ECR에 올린 이미지"
+            echo "- \`${{ steps.tags.outputs.web }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
